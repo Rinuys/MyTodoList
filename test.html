@@ -1,0 +1,221 @@
+{% extends "bootstrap/base.html" %}
+{% block head %}
+{{ super() }}
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		body {font-family: Arial, Helvetica, sans-serif;}
+		* {box-sizing: border-box;}
+
+		input[type=text], select, textarea {
+			width: 100%;
+			padding: 12px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			box-sizing: border-box;
+			margin-top: 6px;
+			margin-bottom: 16px;
+			resize: vertical;
+		}
+
+		.container {
+			border-radius: 5px;
+			background-color: #f2f2f2;
+			padding: 20px;
+		}
+
+		.collapsible {
+			background-color: #777;
+			color: white;
+			cursor: pointer;
+			padding: 18px;
+			width: 100%;
+			border: none;
+			text-align: left;
+			outline: none;
+			font-size: 15px;
+		}
+
+		.active, .collapsible:hover {
+			background-color: #555;
+			margin-top: 5px;
+		}
+
+		.collapsible:after {
+			content: '\002B';
+			color: white;
+			font-weight: bold;
+			float: right;
+			margin-left: 5px;
+		}
+
+		.active:after {
+			content: "\2212";
+		}
+
+		.content {
+			padding: 0 18px;
+			max-height:	 0;
+			overflow: hidden;
+			transition: max-height 0.2s ease-out;
+			background-color: #f1f1f1;
+		}
+
+	</style>
+{% endblock %}
+
+{% block title %}My Todo Manager{% endblock %}
+
+{% block navbar %}
+<div class="navbar navbar-fixed-top">
+  <!-- ... -->
+</div>
+{% endblock %}
+
+{% block content %}
+	<div class="container">
+	  	<h1>My TODO Manager</h1>
+		<br><br>
+		<form class="navbar-form navbar-left" role="제목">
+			<div class="form-group">
+				<label for="todoTitle">제목</label><br>
+				<input type="text" class="form-control" placeholder="제목" id="todoTitle">
+			</div>
+		</form>
+		<br><br><br><br><br>
+		<form class="navbar-form navbar-left" role="마감일">
+			<div class="form-group">
+				<label for="deadline">마감일</label><br>
+				<input type="text" class="form-control" placeholder="마감일" id="deadline">
+			</div>
+		</form>
+		<br><br><br><br><br>
+		<form class="navbar-form navbar-left" role="내용">
+			<div class="form-group">
+				<label for="context">내용</label><br>
+				<input type="text" class="form-control" placeholder="내용" id="context">
+			</div>
+		</form>
+		<br><br>
+		<button type="button" class="btn btn-default navbar-btn" onclick="addTodo()">등록</button>
+		<br><br>
+		<p><h3>Todo List</h3></p>
+	</div>
+{% endblock %}
+
+<!-- 추가하고 싶은 스크립트가 있으면 여기에 추가하면 된다. -->
+{% block scripts %}
+{{ super() }} <!-- 커스텀 파일을 추가할때 해줘야 한다. 오버라이딩 효과 -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular-animate.js">
+		Element.prototype.remove = function() {
+			this.parentElement.removeChild(this);
+		}
+		NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
+			for(var i = this.length - 1; i >= 0; i--) {
+				if(this[i] && this[i].parentElement) {
+					this[i].parentElement.removeChild(this[i]);
+				}
+			}
+		}
+	</script>
+	<script>
+			var todos = [];
+			var divs = [];
+
+			function addInputText(value, tag, num){
+				var id = tag+num;
+				var tempDivForm = document.createElement("form");
+				tempDivForm.setAttribute("class","navbar-form navbar-left");
+
+				var tempDivFormDiv = document.createElement("div");
+				tempDivFormDiv.setAttribute("class","form-group");
+
+				var tempDivFormDivInput = document.createElement("input");
+				tempDivFormDivInput.setAttribute("type","text");
+				tempDivFormDivInput.setAttribute("class","form-control");
+				tempDivFormDivInput.setAttribute("value",value);
+				tempDivFormDivInput.setAttribute("id", id);
+				
+				tempDivFormDiv.appendChild(tempDivFormDivInput);
+				tempDivForm.appendChild(tempDivFormDiv);
+
+				return tempDivForm;
+			}
+
+			function addTodo(){
+				var todoTitle = document.getElementById("todoTitle").value;
+				var deadline = document.getElementById("deadline").value;
+				var context = document.getElementById("context").value;
+
+				var temp = document.createElement("button");
+				temp.setAttribute("name", "todoTitle");
+				temp.setAttribute("class", "collapsible");
+				temp.setAttribute("id", "titleInList" + todos.length);
+
+				var tempChild = document.createTextNode(todoTitle);
+				temp.appendChild(tempChild);
+
+				var tempDiv = document.createElement("div");
+				tempDiv.setAttribute("class", "content");
+				tempDiv.setAttribute("id","div"+todos.length);
+				tempDiv.appendChild(addInputText(todoTitle, "todoTitle", todos.length));
+				tempDiv.appendChild(addInputText(deadline, "deadline", todos.length));
+
+				var tempArea = document.createElement("textarea");
+				tempArea.setAttribute("id","textarea"+todos.length);
+				tempArea.innerHTML = context;
+				tempDiv.appendChild(tempArea);
+
+				var rewriteButton = document.createElement("button");
+				rewriteButton.setAttribute("type","button");
+				rewriteButton.setAttribute("class","btn btn-default navbar-btn");
+				rewriteButton.setAttribute("onclick","rewrite(id)");
+				rewriteButton.setAttribute("id",todos.length);
+				rewriteButton.innerText = "수정";
+
+				tempDiv.appendChild(rewriteButton);
+
+				var removeButton = document.createElement("button");
+				removeButton.setAttribute("type","button");
+				removeButton.setAttribute("class","btn btn-default navbar-btn");
+				removeButton.setAttribute("onclick","remove(id)");
+				removeButton.setAttribute("id",todos.length);
+				removeButton.innerText = "삭제";
+
+				tempDiv.appendChild(removeButton);
+				
+				temp.addEventListener("click",function(){
+					this.classList.toggle("active");
+					var content = tempDiv;
+					if (content.style.maxHeight){
+						content.style.maxHeight = null;
+					} 
+					else {
+						content.style.maxHeight = content.scrollHeight + "px";
+					} 
+				});
+				
+				todos[todos.length] = temp;
+				divs[divs.length] = tempDiv;
+
+				document.body.appendChild(todos[todos.length-1]);
+				document.body.appendChild(divs[divs.length-1]);
+				//DB에 추가해야함
+			}
+
+			function rewrite(num){
+				var temp = document.getElementById("titleInList"+num);
+				var toTitle = document.getElementById("todoTitle"+num).value;
+				temp.textContent = toTitle;
+				//DB에 추가해야함
+			}
+
+			function remove(num){
+				document.getElementById("titleInList"+num).remove();
+				document.getElementById("div"+num).remove();
+				todos[num]=null;
+				divs[num]=null;
+				//DB에서 삭제해야함
+			}
+
+	</script>
+{% endblock %}
